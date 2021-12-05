@@ -44,6 +44,8 @@
 
 6. This reveals that the flag is everything after "https://elvesfactory/" in the `strRT` variable.
 
+7. Instead of reversing this code, you could use [OnlineGDB's VB Compiler](https://www.onlinegdb.com/online_vb_compiler) to run the macro and use `Console.WriteLine()` to print the flag.
+
 ### Flag
 
 `HTB{Th1s_1s_4_pr3s3nt_3v3ryb0dy_w4nts_f0r_chr1stm4s}`
